@@ -10,94 +10,98 @@
         visibility: visible;
       }
       #TBL, #worksheet {
-		visibility: visible;
         position: absolute;
         left: 0;
         top: 0;
-        width: 93%;
+        width: 90%;
         height: 100%;
+      }
+      table, th, td {
+        border: none;
       }
     }
   </style>
 </head>
-<body>
-	<div style="width:25%; margin-left:auto; margin-right:auto; border: 1px solid black; background:aliceblue;">
-		  <div id="Configuration" style="margin:2em;">
-			<div style="font-style:italic; font-size:x-large;text-align: center;"><strong> Math Worksheet Setup </strong>
-			</div>
-			<div style="font-style:italic;text-align: center;">(Use .5 Margins)
-			</div>
-			<br /> 
-				Largest Number on Top? 
-				<input type="checkbox" id="ReMax" value="ReMax" checked onchange="NewConfig()" style="float: right;">    
-			 <br />
-			 <br /> 
-				Show Answers? 
-				<input type="checkbox" id="answers" style="float: right;">    <br />
-			<br /> 
-				Number of Problems?
-				<input type="Number" id="NumProb" size="5" onchange="NewConfig()" style="float: right; text-align: right; width:105px;">   
-			<br />
-			<br /> 
-				Number of Columns?
-				<input type="Number" id="ColPage" size="5" onchange="NewConfig()" style="float: right; text-align: right; width:105px;">    
-			<br />
-			<br /> 
-				Minimum Value?
-				<input type="Number" id="MinVal" size="5" onchange="NewConfig()" style="float: right; text-align: right; width:105px;">    
-			<br />
-			<br /> 
-				Maximum Value?
-				<input type="Number" id="MaxVal" size="5" onchange="NewConfig()" style="float: right; text-align: right; width:105px;">    
-			<br />
-			<br /> 
-				Worksheet Type?
-				<select name="MathAction" id="MathAction" style="float: right; text-align: right; width:105px;">
-				<option value="add">Addition</option>
-				<option value="sub">Subtraction</option>
-				<option value="mul">Multiplication</option>
-				<option value="div">Division</option>
-			  </select>   
-		  </div> <!-- end Configuration -->
-		  <div id="Buttons" style="margin:2em;">
-				<button onclick="NewSet()" style="width:-webkit-fill-available; width:-moz-available;">Generate Numbers</button>
-				<br />
-				<br />
-				<button onclick="GenerateWS()" style="width:-webkit-fill-available; width:-moz-available;">Generate Worksheet</button>
-				<br />
-				<br />
-				<button onclick="window.print()"style="width:-webkit-fill-available; width:-moz-available;">Print Math Worksheet</button>
-		  </div> <!-- end Buttons -->
-	</div>
-	<br />
-	<br />
-	<div id="TBL"></div> <!-- this is the worksheet -->
-	<div id="dbg"></div> <!-- debugging setup goes here -->
-	<div id="test"></div> <!-- debugging messages go here -->
-</body>
+
+<body><p>
+  <div id="Configuration"><strong> &nbsp; &nbsp; &nbsp; Configuration</strong>
+    <br /> Number of Problems:
+      <input type="text" id="NumProb" size="5" onchange="NewConfig()">
+    <br /> Number of Columns on the Page:
+      <input type="text" id="ColPage" size="5" onchange="NewConfig()">
+    <br /> Minimum Value:
+      <input type="text" id="MinVal" size="5" onchange="NewConfig()">
+    <br /> Maximum Value:
+      <input type="text" id="MaxVal" size="5" onchange="NewConfig()">
+    <br /> Should top number always be larger than bottom number?:
+      <input type="checkbox" id="ReMax" onchange="NewConfig()">
+    <br /> Worksheet Type:
+      <select name="MathAction" id="MathAction">
+        <option value="add">Addition</option>
+        <option value="sub">Subtraction</option>
+        <option value="mul">Multiplication</option>
+        <option value="div">Division</option>
+      </select>
+  </div> <!-- end Configuration -->
+  <hr />
+  <div id="Actions"><strong> &nbsp; &nbsp; &nbsp; Actions</strong>
+    <br /> <button onclick="NewSet()">New set of random values</button>
+    <button onclick="Scramble()">Same values in a different order</button>
+    <br /> <button onclick="GenerateWS()">Generate Worksheet</button>
+    <input type="checkbox" id="answers">Show Answers <br /><br />
+  </div> <!-- end Actions -->
+  <div id="TBL"></div> <!-- this is the worksheet -->
+  <div id="dbg"></div> <!-- debugging setup goes here -->
+  <div id="test"></div> <!-- debugging messages go here -->
+</p></body>
 
 <script type="text/javascript">
+//   For: http://codingforums.com/showthread.php?t=184125
+// From: http://www.codingforums.com/javascript-programming/184125-creating-math-sheet-generator.html
+// THANKS to jmrker!
+//   With a side of http://stackoverflow.com/a/1527834 for random numbers
+// var randomnumber = Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
+//   User can change variables from browser
+// see http://stackoverflow.com/questions/23982774/turn-html-form-input-into-javascript-variable
+// some http://stackoverflow.com/questions/15393935/boolean-in-an-if-statement
+// User can also require that the top number be larger (useful for
+// non-negative subtraction).
+// Now with a debug mode!
+//   Option for a completely new set of random numbers
+// keep option "scramble": the same random numbers in a different
+// order (and different pairings)
+// clearing an existing array for NewSet is tricky!
+// http://stackoverflow.com/questions/1232040/how-do-i-empty-an-array-in-javascript
+//   Bug fixed with parseInt (because Javascript is loosely typed):
+// RandomSet only worked on page load, and then subsequent calls used
+// string concatenation, not math addition, for '+' (ugh!).
+// http://stackoverflow.com/questions/3638074/adding-two-numbers-in-javascript-incorrectly/4600744#4600744
+//   Known Issue: "Scramble" does not attempt to respect top number
+// larger than bottom number setting; it ONLY scrambles the order of
+// the top numbers (xvals) and the order of the bottom numbers (yvals).
+//   Print just the worksheet
+// http://stackoverflow.com/questions/468881/print-div-id-printarea-div-only/2618980#2618980
 
-let Debug = false;
+var Debug = false;
 if (Debug === true) {
   document.getElementById("dbg").innerHTML += "<hr /> DEBUG MODE ACTIVE";
   document.getElementById("dbg").innerHTML += "<br /> <button onclick=\"ShowConfig()\">show current configuration</button> <button onclick=\"NewConfig()\">load new configuration</button> <br /> <br /> <button onclick=\"ClearDebugMessages()\">clear debugging messages</button> <br /> ---- DEBUG MESSAGES BELOW ----";
 }
 
-let TopBigger = true;
-let NumberOfProblems = 100;
-let ColumnsOnPage = 5;
-let MinimumValue = 1;
-let MaximumValue = 999;
+var NumberOfProblems = 15;
+var ColumnsOnPage = 3;
+var MinimumValue = 0;
+var MaximumValue = 999;
+var TopBigger = false;
 
 document.getElementById("NumProb").value = NumberOfProblems;
 document.getElementById("ColPage").value = ColumnsOnPage;
 document.getElementById("MinVal").value = MinimumValue;
 document.getElementById("MaxVal").value = MaximumValue;
-document.getElementById("ReMax").value = TopBigger;
+document.getElementById("ReMax").checked = TopBigger;
 
 if (Debug === true) {
-  document.getElementById("test").innerHTML += "<br /> debug: worksheet letiables defined and filled in";
+  document.getElementById("test").innerHTML += "<br /> debug: worksheet variables defined and filled in";
 }
 
 function RandomSet() {
@@ -108,14 +112,14 @@ function RandomSet() {
     document.getElementById("test").innerHTML += TopBigger + " " + MathAction.value;
     document.getElementById("test").innerHTML += "] configuration <br /> debug: ";
     document.getElementById("test").innerHTML += "current array of length " + xvals.length;
-    for (let i=0; i<xvals.length; i++) {
+    for (var i=0; i<xvals.length; i++) {
       document.getElementById("test").innerHTML += "<br />" + xvals[i] + "-" + yvals[i];
       document.getElementById("test").innerHTML += "(" + i+1 + ")<br />";
     }
     document.getElementById("test").innerHTML += "<br /> debug: new array of length ";
     document.getElementById("test").innerHTML += NumberOfProblems + "<br />";
   }
-  for (let i=0; i<NumberOfProblems; i++) {
+  for (var i=0; i<NumberOfProblems; i++) {
     // random numbers in the range from MinimumValue to MaximumValue
     xvals[i] = (Math.floor(Math.random() * (MaximumValue - MinimumValue + 1)) + parseInt(MinimumValue));
     if (TopBigger === true) {
@@ -140,8 +144,8 @@ function RandomSet() {
   }
 }
 
-let xvals = [];
-let yvals = [];
+var xvals = [];
+var yvals = [];
 RandomSet(); // the only call that works without parseInt
 
 function NewSet() {
@@ -160,12 +164,27 @@ function randOrd() {
   return (Math.round(Math.random()) - 0.5);
 }
 
+function Scramble() {
+  if (Debug === true) {
+    document.getElementById("test").innerHTML += "<br /> debug: Scramble the existing set of random numbers<br />";
+  }
+  xvals.sort(randOrd);
+  yvals.sort(randOrd);
+  if (Debug === true) {
+    for (var i=0; i<NumberOfProblems; i++) {
+      document.getElementById("test").innerHTML += xvals[i] + "," + yvals[i];
+      document.getElementById("test").innerHTML += "(" + parseInt(i+1) + ")";
+    }
+    document.getElementById("test").innerHTML += "<br /> debug: end Scramble";
+  }
+}
+
 function MakeTable(act) {
   if (Debug === true) {
     document.getElementById("test").innerHTML += "<br /> debug: MakeTable to " + act;
   }
-  let tmp = '';
-  let str = '<table width="80%" id="worksheet"><tr>';
+  var tmp = '';
+  var str = '<table border="1" width="80%" id="worksheet"><tr>';
   i = 0;
   while (i < NumberOfProblems) {
     x = xvals[i];
@@ -193,10 +212,10 @@ function GenerateWS() {
   if (Debug === true) {
     document.getElementById("test").innerHTML += "<br />debug: GenerateWS";
   }
-  let x = 0
-  let y = 0
-  let str = '';
-  let sel = document.getElementById('MathAction').value;
+  var x = 0
+  var y = 0
+  var str = '';
+  var sel = document.getElementById('MathAction').value;
   switch (sel) {
     case 'add' : str += MakeTable(sel); break;
     case 'sub' : str += MakeTable(sel); break;
